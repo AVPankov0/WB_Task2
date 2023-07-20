@@ -1,0 +1,4 @@
+sklearn 1.2.1
+catboost 1.2
+numpy 1.25.0
+pandas 1.5.3 
