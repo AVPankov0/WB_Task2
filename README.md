@@ -23,7 +23,7 @@ Confusion matrix for CatBoostClassifier:
 ### Configuration
 Adjusting model parameters and changing work mode for model is done through editing *conf.py* file.
 ### Data
-Data format and used dataset is stored in *data* folder. It is possible to use more numerical features as long as they are between *text* and *label* columns.
+Data format, used dataset and labeling from **work** mode is stored in *data* folder. It is possible to use more numerical features as long as they are between *text* and *label* columns.
 Model is saved in *models* folders
 ### Preprocessing
 Preprocessing of data done throug files in *preprocess* folder:  
