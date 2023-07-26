@@ -4,33 +4,35 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import logging
-from conf import config
+from conf import Config
 import preprocess.preprocess as preprocess
 import preprocess.feature_importance as feature_importance
 from sklearn.metrics import precision_score, recall_score, f1_score
 
-if config().mode == 'train':
-    logging.basicConfig(level=logging.INFO, filename="logs/logging.log",filemode="w", format="%(asctime)s %(levelname)s %(message)s")
-    classifier = CatBoostClassifier(depth = config().catboost_params['depth'], iterations = config().catboost_params['iterations'], 
-                                    l2_leaf_reg = config().catboost_params['l2_leaf_reg'], 
-                                    loss_function = config().catboost_params['loss_function'], random_state=42)
+if Config().mode == 'train':
+    logging.basicConfig(level=logging.INFO, filename="./logs/logging.log",filemode="w", format="%(asctime)s %(levelname)s %(message)s")
+    classifier = CatBoostClassifier(depth = Config().catboost_params['depth'], iterations = Config().catboost_params['iterations'], 
+                                    l2_leaf_reg = Config().catboost_params['l2_leaf_reg'], 
+                                    loss_function = Config().catboost_params['loss_function'], random_state=42)
     logging.info("Preprocessing data")
-    df=preprocess.main()
-    feature_importance.process(df.drop(['id1', 'id2', 'id3', 'text', 'label'], axis=1), df.label)
-    X = df.drop(['id1', 'id2', 'id3', 'text', 'label'], axis=1)[pickle.load(open('../data/feat_list.sav', 'rb'))]
+    df=preprocess.preprocess(Config().data_path)
+    feature_importance.process(df.drop(['id1', 'id2', 'id3', 'text', 'label'], axis=1), df.label, Config().feature_path)
+    X = df.drop(['id1', 'id2', 'id3', 'text', 'label'], axis=1)[pickle.load(open(Config().feature_path, 'rb'))]
     y = df.label
     del df
     logging.info("Preprocessing complete")
     logging.info("Training")
     classifier.fit(X, y)
     logging.info("Training complete")
-    pickle.dump(classifier, open('../models/classifier.sav', 'wb'))
-elif config().mode == 'work':
-    classifier = pickle.load(open('../models/classifier.sav', 'rb'))
-    classifier.set_probability_threshold(config().catboost_params['threshold'])
+    pickle.dump(classifier, open(Config().classifier_path, 'wb'))
+    
+elif Config().mode == 'work':
+    logging.basicConfig(level=logging.INFO, filename="./logs/logging.log",filemode="w", format="%(asctime)s %(levelname)s %(message)s")
+    classifier = pickle.load(open(Config().classifier_path, 'rb'))
+    classifier.set_probability_threshold(Config().catboost_params['threshold'])
     logging.info('Preprocessing data')
-    df = preprocess.main()
-    X = df.drop(['id1', 'id2', 'id3', 'text', 'label'], axis=1)[pickle.load(open('../data/feat_list.sav', 'rb'))]
+    df = preprocess.preprocess(Config().data_path)
+    X = df.drop(['id1', 'id2', 'id3', 'text', 'label'], axis=1)[pickle.load(open(Config().feature_path, 'rb'))]
     y = df.label
     del df
     logging.info('Preprocessing complete')
@@ -38,6 +40,10 @@ elif config().mode == 'work':
     precision = precision_score(y, y_pred)
     recall = recall_score(y, y_pred)
     f1 = f1_score(y, y_pred)
+    pd.Series(y_pred).to_csv('./data/predicted_labels.csv')
+    logging.info('Precision score: '+str(precision))
+    logging.info('Recall score: '+str(recall))
+    logging.info('F1 score: '+str(f1))
 else:
     logging.error("Unkown mode. Please use 'work' or 'train' only.")
     
